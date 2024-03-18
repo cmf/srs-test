@@ -56,7 +56,6 @@ var SchedulingCards = /*#__PURE__*/function () {
         this.good = _extends({}, card);
         this.easy = _extends({}, card);
     }
-
     var _proto = SchedulingCards.prototype;
     _proto.update_state = function update_state(state) {
         if (state === State.New) {
@@ -106,7 +105,6 @@ var FSRS = /*#__PURE__*/function () {
     function FSRS() {
         this.p = new Params();
     }
-
     var _proto2 = FSRS.prototype;
     _proto2.repeat = function repeat(card, now) {
         card = _extends({}, card);
@@ -228,11 +226,13 @@ function printInterval(date1, date2) {
 function srsFunc(previous, evaluation) {
     if (previous == null) {
         let card = new Card();
-        previous = {n: 0, interval: 0, efactor: 0, data: card}
+        previous = { n: 0, interval: 0, efactor: 0, data: card }
     } else if (previous.data == null || previous.data.due == null || previous.data.last_review == null) {
         // ensure we reuse the previous n, interval, and efactor, but overwrite data field
-        previous = {...previous, data: new Card()};
+        previous = { ...previous, data: new Card() };
     } else {
+        // previous.data field looks valid, but we must convert the due and laast_review fields from strings to Date
+        // objects.
         previous.data.due = new Date(previous.data.due)
         previous.data.last_review = new Date(previous.data.last_review)
     }
@@ -253,11 +253,16 @@ function srsFunc(previous, evaluation) {
     let newCard = schedule[rating].card;
     let interval = getDaysInterval(now, newCard.due)
 
+    // data field must consist entirely of JSON-serializable values, so let's convert the due and last_review fields to
+    // strings, which can be serialized. When we load previous.data.due and previous.data.last_review, we must convert
+    // back to Date objects from the strings.
+    let data = { ...newCard, due: newCard.due.toString(), last_review: newCard.last_review.toString() }
+
     var newN = evaluation.score < 3 ? 0 : previous.n + 1;
     return {
         n: newN,
         efactor: newCard.difficulty,
         interval: interval,
-        data: newCard
+        data: data
     }
 }
